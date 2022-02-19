@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 
 import db from './ForTable.json';
 
+import { TableBodyView } from './Components/TableBodyView';
+
 import {
-    Checkbox,
     IconButton,
     Paper,
     Table as MUITable,
@@ -17,10 +18,10 @@ import {
 import { ArrowDownward, ArrowUpward, CompareArrows } from '@mui/icons-material';
 
 
-type TCurrent = 'up' | 'default' | 'down'
+type TSort = 'up' | 'default' | 'down'
 type Args = { [key: string]: any };
 
-interface IData {
+export interface IData {
     id: number;
     email: string;
     first_name: string;
@@ -34,13 +35,13 @@ interface IData {
 const Table = () => {
 
     const [ data, setData ] = useState<IData[]>(db);
+    const [ sortType, setSortType ] = useState<TSort>('default');
     const [ sortField, setSortField ] = useState('');
-    const [ sortType, setSortType ] = useState<TCurrent>('default');
     const [ search, setSearch ] = useState('');
 
     const tableHead = new Set(data.flatMap(Object.keys));
 
-    const sortBy = (a: Args, b: Args, type: TCurrent): number => {
+    const sortBy = (a: Args, b: Args, type: TSort): number => {
         switch (type) {
             case 'up':
                 return a[sortField] > b[sortField] ? 1 : -1;
@@ -52,7 +53,6 @@ const Table = () => {
         }
     };
 
-
     const onSortTypeChange = () => {
         let nextSort = sortType;
 
@@ -63,12 +63,17 @@ const Table = () => {
         setSortType(nextSort);
     };
 
+    const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(event.target.value.toLowerCase());
+    };
+
     return (
         <>
-            <TextField value={search} onChange={(event) => {
-                setSearch(event.target.value);
-                setData(data.filter(item => item.first_name.includes(search)));
-            }} label="Search" variant="standard"/>
+            <TextField sx={{ margin: '1rem' }}
+                       value={search}
+                       onChange={handleSearch}
+                       label="Search"
+                       variant="standard"/>
 
             <TableContainer component={Paper}>
                 <MUITable sx={{ minWidth: 650 }}>
@@ -92,26 +97,9 @@ const Table = () => {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {[ ...data ].sort((a, b) => sortBy(a, b, sortType)).map(({
-                                                                                     id,
-                                                                                     email,
-                                                                                     first_name,
-                                                                                     pay_status,
-                                                                                     last_name,
-                                                                                     username,
-                                                                                     profile_link,
-                                                                                 }) => (
-                            <TableRow key={id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                                <TableCell align="left">{id}</TableCell>
-                                <TableCell align="left">{email}</TableCell>
-                                <TableCell align="left">{first_name}</TableCell>
-                                <TableCell align="center"><Checkbox value={pay_status}
-                                                                    checked={pay_status}/></TableCell>
-                                <TableCell align="left">{last_name}</TableCell>
-                                <TableCell align="left">{username}</TableCell>
-                                <TableCell align="left">{profile_link}</TableCell>
-                            </TableRow>
-                        ))}
+                        {[ ...data ].sort((a, b) => sortBy(a, b, sortType))
+                            .filter(entry => Object.values(entry).toString().toLowerCase().indexOf(search) !== -1)
+                            .map((cell) => <TableBodyView key={cell.id} {...cell} />)}
                     </TableBody>
                 </MUITable>
             </TableContainer>
