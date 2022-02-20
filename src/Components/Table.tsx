@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 
-import db from './ForTable.json';
+import db from '../ForTable.json';
 
-import { TableBodyView } from './Components/TableBodyView';
+import { TableRowView } from './TableRowView';
+import { Modal } from './Modal';
 
 import {
     IconButton,
@@ -38,6 +39,7 @@ const Table = () => {
     const [ sortType, setSortType ] = useState<TSort>('default');
     const [ sortField, setSortField ] = useState('');
     const [ search, setSearch ] = useState('');
+    const [ modalState, setModalState ] = useState({ isOpen: false, cellId: 0 });
 
     const tableHead = new Set(data.flatMap(Object.keys));
 
@@ -66,6 +68,9 @@ const Table = () => {
     const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(event.target.value.toLowerCase());
     };
+
+    const handleOpen = (id: number) => setModalState({ isOpen: true, cellId: id });
+    const handleClose = () => setModalState({ isOpen: false, cellId: 0 });
 
     return (
         <>
@@ -99,10 +104,18 @@ const Table = () => {
                     <TableBody>
                         {[ ...data ].sort((a, b) => sortBy(a, b, sortType))
                             .filter(entry => Object.values(entry).toString().toLowerCase().indexOf(search) !== -1)
-                            .map((cell) => <TableBodyView key={cell.id} {...cell} />)}
+                            .map((cell) => (
+                                <TableRow onClick={() => handleOpen(cell.id)}
+                                          key={cell.id}
+                                          sx={{ wordBreak: 'break-word', cursor: 'pointer' }}>
+                                    <TableRowView  {...cell} />
+                                </TableRow>
+                            ))}
                     </TableBody>
                 </MUITable>
             </TableContainer>
+
+            <Modal modalState={modalState} onClose={handleClose} data={data} setData={setData}/>
         </>
     );
 };
