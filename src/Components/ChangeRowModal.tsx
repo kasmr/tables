@@ -1,12 +1,13 @@
-import React, { Dispatch, SetStateAction, useLayoutEffect, useState } from 'react';
+import React, { CSSProperties, Dispatch, SetStateAction, useLayoutEffect, useState } from 'react';
 
 import { IData } from './Table';
 
-import { Button, Checkbox, FormControlLabel, Modal as MUIModal, Paper, TextField } from '@mui/material';
+import { Button, Checkbox, FormControlLabel, Modal as MUIModal, Paper, TextField, Typography } from '@mui/material';
 import { ModalProps } from '@mui/material/Modal';
+import { Edit } from '@mui/icons-material';
 
 
-const style = {
+export const paperStyle = {
     position: 'absolute' as 'absolute',
     top: '50%',
     left: '50%',
@@ -16,11 +17,24 @@ const style = {
     p: 4,
 };
 
+export const headingStyle = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '0.5rem',
+    marginBottom: '1rem',
+};
+
+export const formStyle = {
+    display: 'flex',
+    flexDirection: 'column' as CSSProperties['flexDirection'],
+    gap: '1rem',
+};
 
 interface Props {
     data: IData[];
     setData: Dispatch<SetStateAction<IData[]>>;
-    modalState: {
+    changeModal: {
         isOpen: boolean;
         cellId: number;
     };
@@ -28,13 +42,13 @@ interface Props {
 }
 
 
-const Modal = ({ data, setData, modalState, onClose }: Props) => {
+const ChangeRowModal = ({ data, setData, changeModal, onClose }: Props) => {
 
     useLayoutEffect(() => {
         setRowData(getRowData);
-    }, [ modalState ]);
+    }, [ changeModal ]);
 
-    const getRowData = modalState.cellId && data.filter(row => row.id === modalState.cellId)[0];
+    const getRowData = changeModal.cellId && data.filter(row => row.id === changeModal.cellId)[0];
 
     const [ rowData, setRowData ] = useState<IData | 0>(0);
 
@@ -48,16 +62,28 @@ const Modal = ({ data, setData, modalState, onClose }: Props) => {
         }
     };
 
-    const handleSubmit = (event: React.FormEvent) => {
+    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        setData(prevState => [ ...prevState ].map(data => data.id === id ? rowData as IData : data));
+        setData(prevState => [ ...prevState ].map(row => row.id === id ? rowData as IData : row));
+        onClose && onClose(event, 'escapeKeyDown');
+    };
+
+    const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+        setData(prevState => [ ...prevState ].filter(row => row.id !== id));
         onClose && onClose(event, 'escapeKeyDown');
     };
 
     return (
-        <MUIModal disableAutoFocus open={modalState.isOpen} onClose={onClose}>
-            <Paper sx={style}>
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <MUIModal disableAutoFocus open={changeModal.isOpen} onClose={onClose}>
+            <Paper sx={paperStyle}>
+                <div style={headingStyle}>
+                    <Typography component="h6" variant="h6">
+                        Change row
+                    </Typography>
+                    <Edit color="primary" fontSize="small"/>
+                </div>
+
+                <form onSubmit={handleSubmit} style={formStyle}>
                     <TextField name="email" label="email" value={email} onChange={handleChange} variant="standard"/>
 
                     <TextField name="first_name"
@@ -87,6 +113,7 @@ const Modal = ({ data, setData, modalState, onClose }: Props) => {
                                onChange={handleChange}
                                variant="standard"/>
                     <Button type="submit" variant="contained">Save</Button>
+                    <Button onClick={handleDelete} color="error" variant="contained">Delete</Button>
                 </form>
             </Paper>
         </MUIModal>
@@ -94,4 +121,4 @@ const Modal = ({ data, setData, modalState, onClose }: Props) => {
 };
 
 
-export { Modal };
+export { ChangeRowModal };

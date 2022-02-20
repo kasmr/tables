@@ -3,9 +3,11 @@ import React, { useState } from 'react';
 import db from '../ForTable.json';
 
 import { TableRowView } from './TableRowView';
-import { Modal } from './Modal';
+import { ChangeRowModal } from './ChangeRowModal';
+import { CreateRowModal } from './CreateRowModal';
 
 import {
+    Fab,
     IconButton,
     Paper,
     Table as MUITable,
@@ -15,8 +17,9 @@ import {
     TableHead,
     TableRow,
     TextField,
+    Tooltip,
 } from '@mui/material';
-import { ArrowDownward, ArrowUpward, CompareArrows } from '@mui/icons-material';
+import { Add, ArrowDownward, ArrowUpward, CompareArrows } from '@mui/icons-material';
 
 
 type TSort = 'up' | 'default' | 'down'
@@ -39,7 +42,8 @@ const Table = () => {
     const [ sortType, setSortType ] = useState<TSort>('default');
     const [ sortField, setSortField ] = useState('');
     const [ search, setSearch ] = useState('');
-    const [ modalState, setModalState ] = useState({ isOpen: false, cellId: 0 });
+    const [ changeModal, setChangeModal ] = useState({ isOpen: false, cellId: 0 });
+    const [ createModal, setCreateModal ] = useState(false);
 
     const tableHead = new Set(data.flatMap(Object.keys));
 
@@ -69,8 +73,11 @@ const Table = () => {
         setSearch(event.target.value.toLowerCase());
     };
 
-    const handleOpen = (id: number) => setModalState({ isOpen: true, cellId: id });
-    const handleClose = () => setModalState({ isOpen: false, cellId: 0 });
+    const openChangeModal = (id: number) => setChangeModal({ isOpen: true, cellId: id });
+    const closeChangeModal = () => setChangeModal({ isOpen: false, cellId: 0 });
+
+    const openCreateModal = () => setCreateModal(true);
+    const closeCreateModal = () => setCreateModal(false);
 
     return (
         <>
@@ -105,17 +112,27 @@ const Table = () => {
                         {[ ...data ].sort((a, b) => sortBy(a, b, sortType))
                             .filter(entry => Object.values(entry).toString().toLowerCase().indexOf(search) !== -1)
                             .map((cell) => (
-                                <TableRow onClick={() => handleOpen(cell.id)}
-                                          key={cell.id}
-                                          sx={{ wordBreak: 'break-word', cursor: 'pointer' }}>
-                                    <TableRowView  {...cell} />
-                                </TableRow>
+                                <Tooltip key={cell.id} placement="right-end" title="Click to edit" followCursor arrow>
+                                    <TableRow onClick={() => openChangeModal(cell.id)}
+                                              sx={{ wordBreak: 'break-word', cursor: 'pointer' }}>
+                                        <TableRowView  {...cell} />
+                                    </TableRow>
+                                </Tooltip>
                             ))}
                     </TableBody>
                 </MUITable>
             </TableContainer>
 
-            <Modal modalState={modalState} onClose={handleClose} data={data} setData={setData}/>
+            <ChangeRowModal changeModal={changeModal} onClose={closeChangeModal} data={data} setData={setData}/>
+            <CreateRowModal setData={setData} isOpen={createModal} onClose={closeCreateModal}/>
+
+            <Tooltip title="Add new row" placement="top" arrow>
+                <Fab onClick={openCreateModal}
+                     sx={{ position: 'fixed', right: '3rem', bottom: '3rem' }}
+                     color="primary">
+                    <Add/>
+                </Fab>
+            </Tooltip>
         </>
     );
 };
